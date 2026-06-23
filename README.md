@@ -1,6 +1,6 @@
 # playwright-ai-qa-agent
 
-AI-powered QA pipeline: Playwright tests + an LLM-driven failure agent that classifies failures and (in later phases) reports bugs or opens healing PRs.
+An autonomous QA agent for browser automation: a **perceive → reason → act** loop built on Playwright that ingests test-failure signals, reasons about root cause with an LLM, and takes real actions on its own — filing triaged bug issues and opening self-healing pull requests.
 
 ## Badges
 
@@ -8,7 +8,22 @@ AI-powered QA pipeline: Playwright tests + an LLM-driven failure agent that clas
 
 ## What This Is
 
-When an end-to-end test fails, teams lose time deciding whether the problem is a broken locator, a real regression, flaky timing, or a CI/environment issue. This project turns that decision into a repeatable pipeline step. GitHub Actions runs Playwright and preserves artifacts. The local/dev agent reads failure context from `test-results/results.json` and classifies failures using a configurable provider.
+This is an agentic system, not a script. A Playwright suite exercises a real web app under fault injection; when something breaks, the agent takes over and runs a closed decision loop:
+
+- **Perceive** — ingest the failure signal: structured Playwright results, the failing test source, error/stack, and a captured DOM snapshot of the page at the moment of failure.
+- **Reason** — call a configurable LLM to classify *why* it failed (broken locator vs. real regression vs. flaky timing vs. environment) with a calibrated confidence score, behind a provider-agnostic layer (Anthropic, OpenAI, Google, Ollama, or a deterministic mock).
+- **Act** — when confidence clears a gate, autonomously take the right action: file a triaged GitHub issue for a real bug, or generate and open a **self-healing PR** that fixes a broken locator.
+
+The payoff: when an end-to-end test fails, teams normally lose time deciding whether the problem is a broken locator, a real regression, flaky timing, or a CI/environment issue. This agent makes that decision a repeatable, autonomous pipeline step — and where it's confident, it does the follow-up work for you.
+
+### Browser-automation depth
+
+The Playwright layer is built to production patterns, not demo-grade glue:
+
+- **Page Object Model** across login / dashboard / profile flows (`tests/pom/`).
+- **Custom fixtures** that seed deterministic app state and authenticated sessions (`tests/fixtures/base.ts`).
+- **Fault injection** ("break modes") to deterministically reproduce locator drift, logic bugs, slow networks, and auth failures — the agent's training ground.
+- **Failure forensics** — automatic DOM snapshot, screenshot, and trace capture on every failure, which become the agent's perception inputs.
 
 ## Demo
 
